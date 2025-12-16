@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(LEARNER)
+  avatar    String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdCourses Course[]     @relation("CourseInstructor")
+  enrollments    Enrollment[]
+  progress       Progress[]
+
+  @@map("users")
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  thumbnail   String?
+  price       Decimal  @db.Decimal(10, 2)
+  duration    Int
+  level       Level    @default(BEGINNER)
+  category    String
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  instructor   User         @relation("CourseInstructor", fields: [instructorId], references: [id])
+  instructorId Int
+  enrollments  Enrollment[]
+  lessons      Lesson[]
+  progress     Progress[]
+
+  @@map("courses")
+}
+
+model Lesson {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  videoUrl    String?
+  duration    Int
+  orderIndex  Int
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course   Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId Int
+  progress Progress[]
+
+  @@map("lessons")
+}
+
+model Enrollment {
+  id           Int              @id @default(autoincrement())
+  status       EnrollmentStatus @default(ACTIVE)
+  enrolledAt   DateTime         @default(now())
+  completedAt  DateTime?
+  progress     Float            @default(0)
+  certificateUrl String?
+
+  learner   User   @relation(fields: [learnerId], references: [id])
+  learnerId Int
+  course    Course @relation(fields: [courseId], references: [id])
+  courseId  Int
+
+  @@unique([learnerId, courseId])
+  @@map("enrollments")
+}
+
+model Progress {
+  id          Int      @id @default(autoincrement())
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User   @relation(fields: [userId], references: [id])
+  userId   Int
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId Int
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int
+
+  @@unique([userId, courseId, lessonId])
+  @@map("progress")
+}
+
+enum UserRole {
+  ADMIN
+  INSTRUCTOR
+  LEARNER
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  SUSPENDED
+}
