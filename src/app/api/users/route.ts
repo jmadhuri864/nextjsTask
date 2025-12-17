@@ -88,3 +88,69 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { id, email, name, role, bio } = body
+
+    if (!id || !email || !name) {
+      return NextResponse.json(
+        { error: 'ID, email, and name are required' },
+        { status: 400 }
+      )
+    }
+
+    const user = await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: {
+        email,
+        name,
+        role,
+        bio,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        bio: true,
+        createdAt: true,
+      },
+    })
+
+    return NextResponse.json(user)
+  } catch (error) {
+    console.error('Error updating user:', error)
+    return NextResponse.json(
+      { error: 'Failed to update user' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      )
+    }
+
+    await prisma.user.delete({
+      where: { id: parseInt(id) },
+    })
+
+    return NextResponse.json({ message: 'User deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete user' },
+      { status: 500 }
+    )
+  }
+}

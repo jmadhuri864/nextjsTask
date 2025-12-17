@@ -100,3 +100,76 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { id, status, progress } = body
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Enrollment ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const enrollment = await prisma.enrollment.update({
+      where: { id: parseInt(id) },
+      data: {
+        status,
+        progress: parseFloat(progress) || 0,
+        completedAt: status === 'COMPLETED' ? new Date() : null,
+      },
+      include: {
+        learner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+          },
+        },
+      },
+    })
+
+    return NextResponse.json(enrollment)
+  } catch (error) {
+    console.error('Error updating enrollment:', error)
+    return NextResponse.json(
+      { error: 'Failed to update enrollment' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Enrollment ID is required' },
+        { status: 400 }
+      )
+    }
+
+    await prisma.enrollment.delete({
+      where: { id: parseInt(id) },
+    })
+
+    return NextResponse.json({ message: 'Enrollment deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting enrollment:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete enrollment' },
+      { status: 500 }
+    )
+  }
+}

@@ -1,11 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the `posts` table. If the table is not empty, all the data it contains will be lost.
-  - Added the required column `password` to the `users` table without a default value. This is not possible if the table is not empty.
-  - Made the column `name` on table `users` required. This step will fail if there are existing NULL values in that column.
-
-*/
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'INSTRUCTOR', 'LEARNER');
 
@@ -15,18 +7,20 @@ CREATE TYPE "Level" AS ENUM ('BEGINNER', 'INTERMEDIATE', 'ADVANCED');
 -- CreateEnum
 CREATE TYPE "EnrollmentStatus" AS ENUM ('ACTIVE', 'COMPLETED', 'SUSPENDED');
 
--- DropForeignKey
-ALTER TABLE "posts" DROP CONSTRAINT "posts_authorId_fkey";
+-- CreateTable
+CREATE TABLE "users" (
+    "id" SERIAL NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'LEARNER',
+    "avatar" TEXT,
+    "bio" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
--- AlterTable
-ALTER TABLE "users" ADD COLUMN     "avatar" TEXT,
-ADD COLUMN     "bio" TEXT,
-ADD COLUMN     "password" TEXT NOT NULL,
-ADD COLUMN     "role" "UserRole" NOT NULL DEFAULT 'LEARNER',
-ALTER COLUMN "name" SET NOT NULL;
-
--- DropTable
-DROP TABLE "posts";
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "courses" (
@@ -89,6 +83,9 @@ CREATE TABLE "progress" (
 
     CONSTRAINT "progress_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "enrollments_learnerId_courseId_key" ON "enrollments"("learnerId", "courseId");
